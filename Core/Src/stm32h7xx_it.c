@@ -60,7 +60,7 @@
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
-
+extern PCD_HandleTypeDef hpcd_USB_OTG_FS;
 /* USER CODE BEGIN EV */
 
 /* USER CODE END EV */
@@ -202,44 +202,6 @@ void SysTick_Handler(void)
 /******************************************************************************/
 
 /**
-  * @brief This function handles DMA1 stream0 global interrupt.
-  */
-void DMA1_Stream0_IRQHandler(void)
-{
-  /* USER CODE BEGIN DMA1_Stream0_IRQn 0 */
-	DMA1_Stream0->CR &= 0xFFFFFFFE;
-	LL_DMA_ClearFlag_TC0(DMA1);
-
-	if (LL_DMA_IsActiveFlag_TE0(DMA1))
-	{
-		LL_DMA_ClearFlag_TE0(DMA1);
-	}
-	system_dac1_dma_it();
-
-
-  /* USER CODE END DMA1_Stream0_IRQn 0 */
-
-  /* USER CODE BEGIN DMA1_Stream0_IRQn 1 */
-
-  /* USER CODE END DMA1_Stream0_IRQn 1 */
-}
-
-/**
-  * @brief This function handles DMA1 stream1 global interrupt.
-  */
-void DMA1_Stream1_IRQHandler(void)
-{
-  /* USER CODE BEGIN DMA1_Stream1_IRQn 0 */
-	DMA1_Stream1->CR &= 0xFFFFFFFE;
-	LL_DMA_ClearFlag_TC1(DMA1);
-  /* USER CODE END DMA1_Stream1_IRQn 0 */
-
-  /* USER CODE BEGIN DMA1_Stream1_IRQn 1 */
-
-  /* USER CODE END DMA1_Stream1_IRQn 1 */
-}
-
-/**
   * @brief This function handles DMA1 stream2 global interrupt.
   */
 void DMA1_Stream2_IRQHandler(void)
@@ -289,13 +251,11 @@ void TIM1_UP_IRQHandler(void)
 	asm("nop");
 	asm("nop");
 	asm("nop");
-	LDAC0_OFF;
-	LDAC1_OFF;
+	LDAC_OFF;
 	asm("nop");
 	asm("nop");
 	asm("nop");
-	LDAC0_ON;
-	LDAC1_ON;
+	LDAC_ON;
 	asm("nop");
 
 
@@ -311,21 +271,6 @@ void TIM1_UP_IRQHandler(void)
 }
 
 /**
-  * @brief This function handles SPI1 global interrupt.
-  */
-void SPI1_IRQHandler(void)
-{
-  /* USER CODE BEGIN SPI1_IRQn 0 */
-	//LL_SPI_ClearFlag(SPI1);
-	return;
-
-  /* USER CODE END SPI1_IRQn 0 */
-  /* USER CODE BEGIN SPI1_IRQn 1 */
-
-  /* USER CODE END SPI1_IRQn 1 */
-}
-
-/**
   * @brief This function handles SPI2 global interrupt.
   */
 void SPI2_IRQHandler(void)
@@ -336,6 +281,20 @@ void SPI2_IRQHandler(void)
   /* USER CODE BEGIN SPI2_IRQn 1 */
 
   /* USER CODE END SPI2_IRQn 1 */
+}
+
+/**
+  * @brief This function handles USB On The Go FS global interrupt.
+  */
+void OTG_FS_IRQHandler(void)
+{
+  /* USER CODE BEGIN OTG_FS_IRQn 0 */
+
+  /* USER CODE END OTG_FS_IRQn 0 */
+  HAL_PCD_IRQHandler(&hpcd_USB_OTG_FS);
+  /* USER CODE BEGIN OTG_FS_IRQn 1 */
+
+  /* USER CODE END OTG_FS_IRQn 1 */
 }
 
 /* USER CODE BEGIN 1 */

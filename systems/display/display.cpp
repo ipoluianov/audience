@@ -4,7 +4,7 @@
 void Display::init()
 {
 
-	LL_GPIO_ResetOutputPin(DISPLAY_RS_GPIO_Port, DISPLAY_RS_Pin);
+	/*LL_GPIO_ResetOutputPin(DISPLAY_RS_GPIO_Port, DISPLAY_RS_Pin);
 	HAL_Delay(1);
 	LL_GPIO_ResetOutputPin(DISPLAY_E_GPIO_Port, DISPLAY_E_Pin);
 	HAL_Delay(1);
@@ -22,7 +22,7 @@ void Display::init()
 
 	sendData('0');
 	sendData('U');
-	sendData(230);
+	sendData(230);*/
 }
 
 void Display::process()
@@ -32,7 +32,7 @@ void Display::process()
 
 void Display::setOutput(char data)
 {
-	LL_GPIO_ResetOutputPin(DISPLAY_E_GPIO_Port, DISPLAY_E_Pin);
+	/*LL_GPIO_ResetOutputPin(DISPLAY_E_GPIO_Port, DISPLAY_E_Pin);
 	HAL_Delay(1);
 	GPIOD->ODR = GPIOD->ODR | (((data >> 4) & 0x0F) << 2);
 	HAL_Delay(1);
@@ -45,21 +45,21 @@ void Display::setOutput(char data)
 	LL_GPIO_SetOutputPin(DISPLAY_E_GPIO_Port, DISPLAY_E_Pin);
 	HAL_Delay(1);
 	LL_GPIO_ResetOutputPin(DISPLAY_E_GPIO_Port, DISPLAY_E_Pin);
-	HAL_Delay(1);
+	HAL_Delay(1);*/
 }
 
 void Display::sendCommand(char ch)
 {
-	HAL_Delay(1);
+	/*HAL_Delay(1);
 	LL_GPIO_ResetOutputPin(DISPLAY_RS_GPIO_Port, DISPLAY_RS_Pin);
 	HAL_Delay(1);
-	setOutput(ch);
+	setOutput(ch);*/
 }
 
 void Display::sendData(char ch)
 {
-	HAL_Delay(1);
+	/*HAL_Delay(1);
 	LL_GPIO_SetOutputPin(DISPLAY_RS_GPIO_Port, DISPLAY_RS_Pin);
 	HAL_Delay(1);
-	setOutput(ch);
+	setOutput(ch);*/
 }

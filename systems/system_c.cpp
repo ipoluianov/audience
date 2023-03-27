@@ -27,7 +27,6 @@ void system_timer1(void)
 	app.timer1();
 }
 
-
 void system_dac1_dma_it(void)
 {
 	app.dac()->dmaIT1();
@@ -37,3 +36,9 @@ void system_dac2_dma_it(void)
 {
 	app.dac()->dmaIT2();
 }
+
+void system_add_data(char * data, int size)
+{
+	app.dac()->addData(data, size);
+}
+

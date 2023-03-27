@@ -70,37 +70,18 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define LDAC2_Pin LL_GPIO_PIN_0
-#define LDAC2_GPIO_Port GPIOF
-#define LDAC1_Pin LL_GPIO_PIN_1
-#define LDAC1_GPIO_Port GPIOF
-#define SPI2_CS_Pin LL_GPIO_PIN_3
-#define SPI2_CS_GPIO_Port GPIOF
-#define SPI1_CS_Pin LL_GPIO_PIN_4
-#define SPI1_CS_GPIO_Port GPIOF
 #define ETH_RST_Pin LL_GPIO_PIN_3
 #define ETH_RST_GPIO_Port GPIOA
-#define DISPLAY_RS_Pin LL_GPIO_PIN_0
-#define DISPLAY_RS_GPIO_Port GPIOD
-#define DISPLAY_E_Pin LL_GPIO_PIN_1
-#define DISPLAY_E_GPIO_Port GPIOD
-#define DISPLAY_D4_Pin LL_GPIO_PIN_2
-#define DISPLAY_D4_GPIO_Port GPIOD
-#define DISPLAY_D5_Pin LL_GPIO_PIN_3
-#define DISPLAY_D5_GPIO_Port GPIOD
-#define DISPLAY_D6_Pin LL_GPIO_PIN_4
-#define DISPLAY_D6_GPIO_Port GPIOD
-#define DISPLAY_D7_Pin LL_GPIO_PIN_5
-#define DISPLAY_D7_GPIO_Port GPIOD
-#define ETH_RX_ER_Pin LL_GPIO_PIN_9
-#define ETH_RX_ER_GPIO_Port GPIOB
+#define LDAC_Pin LL_GPIO_PIN_6
+#define LDAC_GPIO_Port GPIOD
+#define CS1_Pin LL_GPIO_PIN_10
+#define CS1_GPIO_Port GPIOG
+#define CS2_Pin LL_GPIO_PIN_9
+#define CS2_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
 
-#define LDAC0_ON GPIOF->ODR |= 0x0002
-#define LDAC0_OFF GPIOF->ODR &= 0xFFFD
-#define LDAC1_ON GPIOF->ODR |= 0x0001
-#define LDAC1_OFF GPIOF->ODR &= 0xFFFE
-
+#define LDAC_ON GPIOD->ODR |= 0x0040
+#define LDAC_OFF GPIOD->ODR &= 0xFFBF
 
 /* USER CODE END Private defines */
 

@@ -21,10 +21,12 @@ Stat stat;
 
 // 0001 0000
 
-#define CS0_ON GPIOF->ODR |= 0x0010
-#define CS0_OFF GPIOF->ODR &= 0xFFEF
-#define CS1_ON GPIOF->ODR |= 0x0008
-#define CS1_OFF GPIOF->ODR &= 0xFFF7
+// 0100 0000 0000
+
+#define CS_1_ON GPIOG->ODR |= 0x0400
+#define CS_1_OFF GPIOG->ODR &= 0xFBFF
+#define CS_2_ON GPIOB->ODR |= 0x0200
+#define CS_2_OFF GPIOB->ODR &= 0xFDFF
 
 //unsigned char dac1_dma_buffer1[3] __attribute__((section(".TxDecripSection"))) = { 0x00, 0x00, 0x0 };
 //unsigned char dac1_dma_buffer2[3] __attribute__((section(".TxDecripSection"))) = { 0x00, 0x00, 0x0 };
@@ -51,7 +53,7 @@ void setDMA();
 void Dac::init()
 {
 
-	LL_SPI_Enable(SPI1);
+	/*LL_SPI_Enable(SPI1);
 
 	LL_SPI_EnableDMAReq_TX(SPI1);
 	LL_SPI_EnableDMAReq_RX(SPI1);
@@ -63,7 +65,7 @@ void Dac::init()
 	LL_DMA_SetDataLength(DMA1, LL_DMA_STREAM_1, 3);
 
     LL_DMA_ConfigAddresses(DMA1, LL_DMA_STREAM_0, (uint32_t)&(SPI1->RXDR), (uint32_t)&dac1_dma_buffer_rx, LL_DMA_GetDataTransferDirection(DMA1, LL_DMA_STREAM_0));
-    LL_DMA_ConfigAddresses(DMA1, LL_DMA_STREAM_1, (uint32_t)dac1_dma_buffer_tx, (uint32_t)&(SPI1->TXDR), LL_DMA_GetDataTransferDirection(DMA1, LL_DMA_STREAM_1));
+    LL_DMA_ConfigAddresses(DMA1, LL_DMA_STREAM_1, (uint32_t)dac1_dma_buffer_tx, (uint32_t)&(SPI1->TXDR), LL_DMA_GetDataTransferDirection(DMA1, LL_DMA_STREAM_1));*/
 
 	LL_SPI_Enable(SPI2);
 
@@ -83,122 +85,83 @@ void Dac::init()
 	LL_TIM_EnableCounter(TIM1);
 }
 
+extern SPI_HandleTypeDef hspi1;
+
 void Dac::process()
 {
+	/*DMA1_Stream0->NDTR = 3;
+	DMA1_Stream1->NDTR = 3;
+
+	DMA1_Stream0->CR |= 0x00000001;
+	DMA1_Stream1->CR |= 0x00000001;
+	LL_SPI_StartMasterTransfer(SPI1);*/
+
+	//SPI1->TXDR = 0x11;
+	//SPI1->CR1 = SPI1->CR1 | 0b00000100;
+
+/*	LL_GPIO_ResetOutputPin(CS1_GPIO_Port, CS1_Pin);
+	LL_SPI_TransmitData8(SPI1, 0xAA);
+	LL_SPI_StartMasterTransfer(SPI1);
+	LL_GPIO_SetOutputPin(CS1_GPIO_Port, CS1_Pin);
+
+	LL_SPI_TransmitData8(SPI2, 0xAA);
+	LL_SPI_StartMasterTransfer(SPI2);*/
+
+	LL_GPIO_ResetOutputPin(CS1_GPIO_Port, CS1_Pin);
+	volatile HAL_StatusTypeDef err = HAL_SPI_Transmit(&hspi1, dac1_dma_buffer_tx, 3, 1000);
+	LL_GPIO_SetOutputPin(CS1_GPIO_Port, CS1_Pin);
+
+
+	HAL_Delay(1);
+
 	//generateSin();
 	//generateMiander();
 }
 
-void Dac::addFrame(char * data, int bits, int dataSize)
+void Dac::addData(char * data, int size)
 {
-	stat.bufferLoading++;
+	short * dataAsShorts = (short *) data;
+	int shortsCount = size / 4;
 
-	int count = 0;
-
-
-	if (bits == 16)
+	__disable_irq();
+	for (int i = 0; i < shortsCount; i += 2)
 	{
-		stat.countOf16++;
-		count = dataSize / 4;
-	}
-	else
-	{
-		if (bits == 24)
-		{
-			stat.countOf24++;
-			count = dataSize / 6;
+		int newIndex = inputIndex_;
+		newIndex++;
+		if (newIndex == bufferSizeSamples_) {
+			newIndex = 0;
 		}
-		else
-			if (bits == 32)
-			{
-				stat.countOf32++;
-				count = dataSize / 8;
-			}
+		if (newIndex == outputIndex_)
+			break;
+		channelA_[inputIndex_] = dataAsShorts[i];
+		channelB_[inputIndex_] = dataAsShorts[i + 1];
+		inputIndex_ = newIndex;
+	}
+	__enable_irq();
+}
+
+int Dac::currentDataSize()
+{
+	int result;
+
+	__disable_irq();
+
+	if (inputIndex_ == outputIndex_)
+		result = 0;
+
+	if (inputIndex_ < outputIndex_) {
+
 	}
 
-	register unsigned outputIndex = this->outputIndex_;
-	register unsigned inputIndex = this->inputIndex_;
+	__enable_irq();
 
-	register unsigned nextInputIndex = inputIndex + 1;
-	if (nextInputIndex >= FRAMES_COUNT) // Переход в начало буфера
-		nextInputIndex = 0;
-	if (nextInputIndex == outputIndex) // Переполнение
-	{
-		stat.overloadBuffer++;
-		return;
-	}
-
-	Frame * frame;
-	frame = &frames_[nextInputIndex];
-
-	if (bits == 16)
-	{
-		signed short * convertedDataA = (signed short *) data;
-		signed short * convertedDataB = (signed short *) (data + 2);
-		for (int i = 0; i < count; i++)
-		{
-			int valueA = convertedDataA[i * 2];
-			int valueB = convertedDataB[i * 2];
-			frame->channelA[i] = (valueA + 32767) * 16;
-			frame->channelB[i] = (valueB + 32767) * 16;
-		}
-	}
-
-	if (bits == 32)
-	{
-		signed int * convertedDataA = (signed int *) data;
-		signed int * convertedDataB = (signed int *) (data + 4);
-
-		for (int i = 0; i < count; i++)
-		{
-			int valueA = convertedDataA[i * 4];
-			if (valueA & 0x800000)
-				valueA = (valueA & 0x7FFFFF) - 0x800000;
-			int valueB = convertedDataB[i * 4];
-			if (valueB & 0x800000)
-				valueB = (valueB & 0x7FFFFF) - 0x800000;
-
-			frame->channelA[i] = (valueA + 2048 * 1024) / 16;
-			frame->channelB[i] = 0;
-		}
-	}
-
-	if (bits == 24)
-	{
-		unsigned char * convertedData = (unsigned char *) data;
-		for (int i = 0; i < count * 6; i += 6)
-		{
-			int value = convertedData[i + 2];
-			value <<= 8;
-			value |= convertedData[i + 1];
-			value <<= 8;
-			value += convertedData[i];
-			if (value & 0x800000)
-				value = (value & 0x7FFFFF) - 0x800000;
-			//value = value >> 4;
-			frame->channelA[i / 6] = (value + 512 * 1024) / 16;
-			frame->channelB[i / 6] = 0;
-
-			/*value = convertedData[i + 2 + 3];
-			value <<= 8;
-			value |= convertedData[i + 1 + 3];
-			value <<= 8;
-			value += convertedData[i + 3];
-			if (value & 0x800000)
-				value = 0x800000 | (~(value & 0x7FFFFF));
-			value = value >> 4;
-			frame->channelB[i / 6] = value;*/
-		}
-	}
-	frame->size = count;
-
-	inputIndex_ = nextInputIndex;
+	return result;
 }
 
 void Dac::sendBytes1DMA(unsigned char * bytes)
 {
-	HAL_GPIO_WritePin(SPI1_CS_GPIO_Port, SPI1_CS_Pin, GPIO_PIN_RESET);
-	__DSB();
+	//HAL_GPIO_WritePin(SPI1_CS_GPIO_Port, SPI1_CS_Pin, GPIO_PIN_RESET);
+	//__DSB();
 	//HAL_SPI_Transmit_DMA(&hspi1, (uint8_t*) bytes, 3);
 }
 
@@ -221,13 +184,13 @@ void Dac::sendBytes1DMA(unsigned char * bytes)
 
 void Dac::sendBytes1(unsigned char * bytes)
 {
-	unsigned char rvcBuffer[2];
+	/*unsigned char rvcBuffer[2];
 	//HAL_Delay(1);
 	HAL_GPIO_WritePin(SPI1_CS_GPIO_Port, SPI1_CS_Pin, GPIO_PIN_RESET);
 	//HAL_Delay(1);
 	//HAL_SPI_TransmitReceive(&hspi1, bytes, rvcBuffer, 3, 20);
 	//HAL_Delay(1);
-	HAL_GPIO_WritePin(SPI1_CS_GPIO_Port, SPI1_CS_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(SPI1_CS_GPIO_Port, SPI1_CS_Pin, GPIO_PIN_SET);*/
 	//HAL_Delay(1);
 }
 
@@ -249,7 +212,7 @@ int currentCodeB = 0;
 void setDirect()
 {
 	//HAL_GPIO_WritePin(ADC8_CS_GPIO_Port, ADC8_CS_Pin, GPIO_PIN_RESET);
-	LL_GPIO_ResetOutputPin(SPI1_CS_GPIO_Port, SPI1_CS_Pin);
+	//LL_GPIO_ResetOutputPin(SPI1_CS_GPIO_Port, SPI1_CS_Pin);
 
 	__DSB();
 
@@ -267,13 +230,13 @@ void setDirect()
 	}
 
 	//HAL_SPI_TransmitReceive(&hspi5, adc8_dma_buffer_tx, adc8_dma_buffer_rx, 4, 10);
-	LL_GPIO_SetOutputPin(SPI1_CS_GPIO_Port, SPI1_CS_Pin);
+	//LL_GPIO_SetOutputPin(SPI1_CS_GPIO_Port, SPI1_CS_Pin);
 	//HAL_GPIO_WritePin(ADC8_CS_GPIO_Port, ADC8_CS_Pin, GPIO_PIN_SET);
 	for (int k = 0; k < 5; k++)
 	{
 		asm("nop");
 	}
-	LDAC0_OFF;
+	/*LDAC0_OFF;
 	for (int k = 0; k < 5; k++)
 	{
 		asm("nop");
@@ -282,7 +245,7 @@ void setDirect()
 	for (int k = 0; k < 5; k++)
 	{
 		asm("nop");
-	}
+	}*/
 
 }
 
@@ -292,54 +255,19 @@ void setDMA()
 
 void Dac::timer1()
 {
-	/*rateCounter_++;
-	if (rateCounter_ >= rateDiv_)
-		rateCounter_ = 0;
-	if (rateCounter_ != 0)
-		return;*/
+	return;
 
-	if (currentFrame_== nullptr) // from silence
-	{
-		int inputIndex = inputIndex_;
-		if (outputIndex_ == inputIndex) // No frames available
-			return;
+	if (outputIndex_ == inputIndex_)
+		return; // No data to play
 
-		// Start playing new frame
-		currentFrame_ = &frames_[outputIndex_];
-		playingPoint_ = 0;
-	}
+	int currentCodeA = channelA_[outputIndex_];
+	int currentCodeB = channelB_[outputIndex_];
 
-	while(true) // Find frame/point for playing
-	{
-		if (playingPoint_ >= currentFrame_->size)
-		{
-			int inputIndex = inputIndex_;
-			int outputIndex = outputIndex_;
-			if (outputIndex == inputIndex) // No frames available
-			{
-				currentFrame_ = nullptr; // To silent mode
-				return;
-			}
-
-			stat.bufferLoading--;
-			outputIndex++;
-			if (outputIndex >= FRAMES_COUNT)
-				outputIndex = 0;
-			outputIndex_ = outputIndex;
-
-			// Start playing new frame
-			currentFrame_ = &frames_[outputIndex];
-			playingPoint_ = 0;
-		}
-		else
-		{
-			break;
-		}
-	}
-
-	currentCodeA = currentFrame_->channelA[playingPoint_];
-	currentCodeB = currentFrame_->channelB[playingPoint_];
-	playingPoint_ += 1;
+	__disable_irq();
+	outputIndex_++;
+	if (outputIndex_ == bufferSizeSamples_)
+		outputIndex_ = 0;
+	__enable_irq();
 
 	dac1_dma_buffer_tx[0] = (currentCodeA >> 12) & 0xFF;
 	dac1_dma_buffer_tx[1] = (currentCodeA >> 4) & 0xFF;
@@ -347,8 +275,10 @@ void Dac::timer1()
 	dac2_dma_buffer_tx[0] = (currentCodeB >> 12) & 0xFF;
 	dac2_dma_buffer_tx[1] = (currentCodeB >> 4) & 0xFF;
 	dac2_dma_buffer_tx[2] = (currentCodeB << 4) & 0xF0;
-	CS0_OFF;
-	CS1_OFF;
+	//CS_1_OFF;
+	//CS_2_OFF;
+	LL_GPIO_ResetOutputPin(CS1_GPIO_Port, CS1_Pin);
+	LL_GPIO_ResetOutputPin(CS2_GPIO_Port, CS2_Pin);
 	__DSB();
 
 	//LL_GPIO_ResetOutputPin(SPI1_CS_GPIO_Port, SPI1_CS_Pin);
@@ -376,7 +306,7 @@ void Dac::dmaIT1()
 	asm("nop");
 	asm("nop");
 
-	LL_GPIO_SetOutputPin(SPI1_CS_GPIO_Port, SPI1_CS_Pin);
+	LL_GPIO_SetOutputPin(CS1_GPIO_Port, CS1_Pin);
 }
 
 void Dac::dmaIT2()
@@ -385,35 +315,6 @@ void Dac::dmaIT2()
 	asm("nop");
 	asm("nop");
 
-	LL_GPIO_SetOutputPin(SPI2_CS_GPIO_Port, SPI2_CS_Pin);
+	LL_GPIO_SetOutputPin(CS2_GPIO_Port, CS2_Pin);
 }
 
-void Dac::generateSin()
-{
-	int index = 0;
-	for (double x = 0; x < 6.28; x += 0.01)
-	{
-		double v = sin(x) * 32000;
-		genBuffer_[index] = v;
-		genBuffer_[index + 1] = v;
-		index += 2;
-	}
-
-	addFrame((char *)genBuffer_, 16, index / 2);
-}
-
-void Dac::generateMiander()
-{
-	int index = 0;
-	for (int x = 0; x < 1000; x += 1)
-	{
-		int v = -30000;
-		if (x < 500)
-			v = 30000;
-		genBuffer_[index] = v;
-		genBuffer_[index + 1] = v;
-		index += 2;
-	}
-
-	addFrame((char *)genBuffer_, 16, index / 2);
-}
