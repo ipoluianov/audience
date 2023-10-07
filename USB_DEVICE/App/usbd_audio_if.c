@@ -52,22 +52,46 @@
 
 /* USER CODE BEGIN PRIVATE_TYPES */
 
-volatile int i1 = 0;
-volatile int i2 = 0;
-volatile int i3 = 0;
-volatile int i4 = 0;
-volatile int i5 = 0;
-volatile int i6 = 0;
-volatile int i7 = 0;
-
-volatile int i11 = 0;
-volatile int i12 = 0;
-
-volatile int i41 = 0;
-
 volatile int ps_count = 0;
 volatile int ps_last_dt = 0;
 volatile int ps_count_per_second = 0;
+
+struct UsbStat
+{
+	uint32_t AUDIO_Init_FS;
+	uint32_t AUDIO_Init_FS_AudioFreq ;
+	uint32_t AUDIO_Init_FS_Volume;
+	uint32_t AUDIO_Init_FS_options;
+
+	uint32_t AUDIO_DeInit_FS;
+	uint32_t AUDIO_DeInit_options;
+
+	uint32_t AUDIO_AudioCmd_FS;
+	uint32_t AUDIO_AudioCmd_FS_size;
+	uint32_t AUDIO_AudioCmd_FS_cmd;
+
+	uint32_t AUDIO_VolumeCtl_FS;
+	uint8_t AUDIO_VolumeCtl_FS_vol;
+
+	uint32_t AUDIO_MuteCtl_FS;
+	uint8_t AUDIO_MuteCtl_FS_cmd;
+
+	uint32_t AUDIO_PeriodicTC_FS;
+	uint32_t AUDIO_PeriodicTC_FS_size;
+	uint32_t AUDIO_PeriodicTC_FS_cmd;
+
+	uint32_t AUDIO_GetState_FS;
+
+	uint32_t TransferComplete_CallBack_FS;
+	uint32_t HalfTransfer_CallBack_FS;
+};
+
+struct UsbStat usbStat;
+
+void usbStatInit()
+{
+	memset(&usbStat, 0, sizeof(usbStat));
+}
 
 
 /* USER CODE END PRIVATE_TYPES */
@@ -174,8 +198,11 @@ USBD_AUDIO_ItfTypeDef USBD_AUDIO_fops_FS =
 static int8_t AUDIO_Init_FS(uint32_t AudioFreq, uint32_t Volume, uint32_t options)
 {
   /* USER CODE BEGIN 0 */
+	usbStat.AUDIO_Init_FS++;
+	usbStat.AUDIO_Init_FS_AudioFreq = AudioFreq;
+	usbStat.AUDIO_Init_FS_Volume = Volume;
+	usbStat.AUDIO_Init_FS_options = options;
   UNUSED(AudioFreq);
-  i11++;
   UNUSED(Volume);
   UNUSED(options);
   return (USBD_OK);
@@ -190,8 +217,9 @@ static int8_t AUDIO_Init_FS(uint32_t AudioFreq, uint32_t Volume, uint32_t option
 static int8_t AUDIO_DeInit_FS(uint32_t options)
 {
   /* USER CODE BEGIN 1 */
+	usbStat.AUDIO_DeInit_FS++;
+	usbStat.AUDIO_DeInit_options = options;
   UNUSED(options);
-  i12++;
   return (USBD_OK);
   /* USER CODE END 1 */
 }
@@ -206,14 +234,15 @@ static int8_t AUDIO_DeInit_FS(uint32_t options)
 static int8_t AUDIO_AudioCmd_FS(uint8_t* pbuf, uint32_t size, uint8_t cmd)
 {
   /* USER CODE BEGIN 2 */
+	usbStat.AUDIO_AudioCmd_FS++;
+	usbStat.AUDIO_AudioCmd_FS_size = size;
+	usbStat.AUDIO_AudioCmd_FS_cmd = cmd;
   switch(cmd)
   {
     case AUDIO_CMD_START:
-    	i1++;
     break;
 
     case AUDIO_CMD_PLAY:
-    	i2++;
     break;
   }
   UNUSED(pbuf);
@@ -231,8 +260,9 @@ static int8_t AUDIO_AudioCmd_FS(uint8_t* pbuf, uint32_t size, uint8_t cmd)
 static int8_t AUDIO_VolumeCtl_FS(uint8_t vol)
 {
   /* USER CODE BEGIN 3 */
+	usbStat.AUDIO_VolumeCtl_FS++;
+	usbStat.AUDIO_VolumeCtl_FS_vol = vol;
   UNUSED(vol);
-  i3++;
   return (USBD_OK);
   /* USER CODE END 3 */
 }
@@ -245,6 +275,8 @@ static int8_t AUDIO_VolumeCtl_FS(uint8_t vol)
 static int8_t AUDIO_MuteCtl_FS(uint8_t cmd)
 {
   /* USER CODE BEGIN 4 */
+	usbStat.AUDIO_MuteCtl_FS++;
+	usbStat.AUDIO_MuteCtl_FS_cmd = cmd;
   UNUSED(cmd);
   return (USBD_OK);
   /* USER CODE END 4 */
@@ -258,15 +290,19 @@ static int8_t AUDIO_MuteCtl_FS(uint8_t cmd)
 static int8_t AUDIO_PeriodicTC_FS(uint8_t *pbuf, uint32_t size, uint8_t cmd)
 {
   /* USER CODE BEGIN 5 */
+	usbStat.AUDIO_PeriodicTC_FS++;
+	usbStat.AUDIO_PeriodicTC_FS_size = size;
+	usbStat.AUDIO_PeriodicTC_FS_cmd = cmd;
   UNUSED(pbuf);
   UNUSED(size);
   UNUSED(cmd);
-  i4++;
-  i41 += size;
 
   short * data = (short *)pbuf;
 
-  system_add_data(pbuf, size);
+  LL_GPIO_ResetOutputPin(LED_RED_GPIO_Port, LED_RED_Pin);
+	LL_GPIO_SetOutputPin(LED_RED_GPIO_Port, LED_RED_Pin);
+
+  //system_add_data(pbuf, size);
 
   int now = HAL_GetTick();
   ps_count += size;
@@ -287,7 +323,7 @@ static int8_t AUDIO_PeriodicTC_FS(uint8_t *pbuf, uint32_t size, uint8_t cmd)
 static int8_t AUDIO_GetState_FS(void)
 {
   /* USER CODE BEGIN 6 */
-	i5++;
+	usbStat.AUDIO_GetState_FS++;
   return (USBD_OK);
   /* USER CODE END 6 */
 }
@@ -299,7 +335,7 @@ static int8_t AUDIO_GetState_FS(void)
 void TransferComplete_CallBack_FS(void)
 {
   /* USER CODE BEGIN 7 */
-	i6++;
+	usbStat.TransferComplete_CallBack_FS++;
   USBD_AUDIO_Sync(&hUsbDeviceFS, AUDIO_OFFSET_FULL);
   /* USER CODE END 7 */
 }
@@ -311,7 +347,7 @@ void TransferComplete_CallBack_FS(void)
 void HalfTransfer_CallBack_FS(void)
 {
   /* USER CODE BEGIN 8 */
-	i7++;
+	usbStat.HalfTransfer_CallBack_FS++;
   USBD_AUDIO_Sync(&hUsbDeviceFS, AUDIO_OFFSET_HALF);
   /* USER CODE END 8 */
 }

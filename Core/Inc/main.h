@@ -72,6 +72,10 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define ETH_RST_Pin LL_GPIO_PIN_3
 #define ETH_RST_GPIO_Port GPIOA
+#define LED_RED_Pin LL_GPIO_PIN_13
+#define LED_RED_GPIO_Port GPIOD
+#define LED_GREEN_Pin LL_GPIO_PIN_2
+#define LED_GREEN_GPIO_Port GPIOG
 #define LDAC_Pin LL_GPIO_PIN_6
 #define LDAC_GPIO_Port GPIOD
 #define CS1_Pin LL_GPIO_PIN_10

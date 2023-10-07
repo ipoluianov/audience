@@ -69,6 +69,8 @@ static void MX_TIM1_Init(void);
 extern uint8_t IP_ADDRESS[4];
 extern uint8_t NETMASK_ADDRESS[4];
 
+void usbStatInit();
+
 uint8_t buffer[256];
 
 /* USER CODE END 0 */
@@ -138,6 +140,8 @@ int main(void)
   __HAL_RCC_ETH1RX_CLK_ENABLE();
   __HAL_RCC_DMA1_CLK_ENABLE();
   HAL_Delay(1);
+
+  usbStatInit();
 
   /* USER CODE END SysInit */
 
@@ -576,10 +580,10 @@ static void MX_GPIO_Init(void)
   LL_GPIO_SetOutputPin(ETH_RST_GPIO_Port, ETH_RST_Pin);
 
   /**/
-  LL_GPIO_SetOutputPin(LDAC_GPIO_Port, LDAC_Pin);
+  LL_GPIO_SetOutputPin(GPIOD, LED_RED_Pin|LDAC_Pin);
 
   /**/
-  LL_GPIO_SetOutputPin(CS1_GPIO_Port, CS1_Pin);
+  LL_GPIO_SetOutputPin(GPIOG, LED_GREEN_Pin|CS1_Pin);
 
   /**/
   LL_GPIO_SetOutputPin(CS2_GPIO_Port, CS2_Pin);
@@ -593,20 +597,20 @@ static void MX_GPIO_Init(void)
   LL_GPIO_Init(ETH_RST_GPIO_Port, &GPIO_InitStruct);
 
   /**/
-  GPIO_InitStruct.Pin = LDAC_Pin;
+  GPIO_InitStruct.Pin = LED_RED_Pin|LDAC_Pin;
   GPIO_InitStruct.Mode = LL_GPIO_MODE_OUTPUT;
   GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_VERY_HIGH;
   GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
   GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
-  LL_GPIO_Init(LDAC_GPIO_Port, &GPIO_InitStruct);
+  LL_GPIO_Init(GPIOD, &GPIO_InitStruct);
 
   /**/
-  GPIO_InitStruct.Pin = CS1_Pin;
+  GPIO_InitStruct.Pin = LED_GREEN_Pin|CS1_Pin;
   GPIO_InitStruct.Mode = LL_GPIO_MODE_OUTPUT;
   GPIO_InitStruct.Speed = LL_GPIO_SPEED_FREQ_VERY_HIGH;
   GPIO_InitStruct.OutputType = LL_GPIO_OUTPUT_PUSHPULL;
   GPIO_InitStruct.Pull = LL_GPIO_PULL_NO;
-  LL_GPIO_Init(CS1_GPIO_Port, &GPIO_InitStruct);
+  LL_GPIO_Init(GPIOG, &GPIO_InitStruct);
 
   /**/
   GPIO_InitStruct.Pin = CS2_Pin;

@@ -118,6 +118,8 @@ void Dac::addData(char * data, int size)
 	short * dataAsShorts = (short *) data;
 	int shortsCount = size / 4;
 
+	LL_GPIO_ResetOutputPin(LED_GREEN_GPIO_Port, LED_GREEN_Pin);
+
 	__disable_irq();
 	for (int i = 0; i < shortsCount; i += 2)
 	{
@@ -133,6 +135,7 @@ void Dac::addData(char * data, int size)
 		inputIndex_ = newIndex;
 	}
 	__enable_irq();
+	LL_GPIO_SetOutputPin(LED_GREEN_GPIO_Port, LED_GREEN_Pin);
 }
 
 int Dac::currentDataSize()
@@ -250,9 +253,23 @@ void setDMA()
 
 void Dac::timer1()
 {
+	if (outputIndex_ == inputIndex_)
+			return;
+
+
+
+	__disable_irq();
 	// Load data to DMA buffer
-	int currentCodeA = counter_;
-	int currentCodeB = counter_;
+	int currentCodeA = channelA_[outputIndex_] * 10 + 8000000;
+	int currentCodeB = channelB_[outputIndex_] * 10 + 8000000;
+
+	outputIndex_++;
+	if (outputIndex_ >= bufferSizeSamples_)
+	{
+		outputIndex_ = 0;
+	}
+	__enable_irq();
+	//int currentCodeB = 131123;
 
 	dac1_dma_buffer_tx[0] = (currentCodeA >> 12) & 0xFF;
 	dac1_dma_buffer_tx[1] = (currentCodeA >> 4) & 0xFF;
@@ -280,9 +297,12 @@ void Dac::timer1()
 	LL_SPI_StartMasterTransfer(SPI1);
 	LL_SPI_StartMasterTransfer(SPI2);
 
+
+
 	counter_++;
-	if (counter_ > 65535)
+	if (counter_ >= bufferSizeSamples_)
 		counter_ = 0;
+	//counter_ = 131123;
 }
 
 
