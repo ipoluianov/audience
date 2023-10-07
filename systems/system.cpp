@@ -9,26 +9,26 @@ void System::init()
 {
 	dac_.init();
 
-	TelnetServer::get().start();
-	BinaryServer::get().start();
+	//TelnetServer::get().start();
+	//BinaryServer::get().start();
 
 	udpServer_.init();
-	display_.init();
+	//display_.init();
 
 	//scan_.start();
 }
 
 void System::process()
 {
-  MX_LWIP_Process();
+  //MX_LWIP_Process();
 
   dac_.process();
-  display_.process();
+  //display_.process();
 
-  TelnetServer::get().process();
-  BinaryServer::get().process();
+  //TelnetServer::get().process();
+  //BinaryServer::get().process();
 
-  udpServer_.process();
+  //udpServer_.process();
 }
 
 void System::systick()

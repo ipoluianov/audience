@@ -12,8 +12,6 @@ EXTERNC void system_process(void);
 EXTERNC void system_systick(void);
 
 EXTERNC void system_timer1(void);
-EXTERNC void system_dac1_dma_it(void);
-EXTERNC void system_dac2_dma_it(void);
 
 EXTERNC void system_add_data(char * data, int size);
 

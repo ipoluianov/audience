@@ -202,20 +202,61 @@ void SysTick_Handler(void)
 /******************************************************************************/
 
 /**
+  * @brief This function handles DMA1 stream0 global interrupt.
+  */
+void DMA1_Stream0_IRQHandler(void)
+{
+  /* USER CODE BEGIN DMA1_Stream0_IRQn 0 */
+
+	DMA1_Stream0->CR &= 0xFFFFFFFE;
+	LL_DMA_ClearFlag_TC0(DMA1);
+
+	if (LL_DMA_IsActiveFlag_TE0(DMA1))
+		LL_DMA_ClearFlag_TE0(DMA1);
+
+	// CS0
+	LL_GPIO_SetOutputPin(CS1_GPIO_Port, CS1_Pin);
+
+  /* USER CODE END DMA1_Stream0_IRQn 0 */
+
+  /* USER CODE BEGIN DMA1_Stream0_IRQn 1 */
+
+  /* USER CODE END DMA1_Stream0_IRQn 1 */
+}
+
+/**
+  * @brief This function handles DMA1 stream1 global interrupt.
+  */
+void DMA1_Stream1_IRQHandler(void)
+{
+  /* USER CODE BEGIN DMA1_Stream1_IRQn 0 */
+
+	DMA1_Stream1->CR &= 0xFFFFFFFE;
+	LL_DMA_ClearFlag_TC1(DMA1);
+	if (LL_DMA_IsActiveFlag_TE1(DMA1))
+		LL_DMA_ClearFlag_TE1(DMA1);
+
+  /* USER CODE END DMA1_Stream1_IRQn 0 */
+
+  /* USER CODE BEGIN DMA1_Stream1_IRQn 1 */
+
+  /* USER CODE END DMA1_Stream1_IRQn 1 */
+}
+
+/**
   * @brief This function handles DMA1 stream2 global interrupt.
   */
 void DMA1_Stream2_IRQHandler(void)
 {
   /* USER CODE BEGIN DMA1_Stream2_IRQn 0 */
+
 	DMA1_Stream2->CR &= 0xFFFFFFFE;
 	LL_DMA_ClearFlag_TC2(DMA1);
-
 	if (LL_DMA_IsActiveFlag_TE2(DMA1))
-	{
 		LL_DMA_ClearFlag_TE2(DMA1);
-	}
-	system_dac2_dma_it();
 
+	// CS1
+	LL_GPIO_SetOutputPin(CS2_GPIO_Port, CS2_Pin);
 
   /* USER CODE END DMA1_Stream2_IRQn 0 */
 
@@ -268,6 +309,19 @@ void TIM1_UP_IRQHandler(void)
   /* USER CODE BEGIN TIM1_UP_IRQn 1 */
 
   /* USER CODE END TIM1_UP_IRQn 1 */
+}
+
+/**
+  * @brief This function handles SPI1 global interrupt.
+  */
+void SPI1_IRQHandler(void)
+{
+  /* USER CODE BEGIN SPI1_IRQn 0 */
+
+  /* USER CODE END SPI1_IRQn 0 */
+  /* USER CODE BEGIN SPI1_IRQn 1 */
+
+  /* USER CODE END SPI1_IRQn 1 */
 }
 
 /**

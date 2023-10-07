@@ -17,8 +17,6 @@ public:
 	void setChannel(int index, unsigned int code);
 
 	void timer1();
-	void dmaIT1();
-	void dmaIT2();
 
 	int currentDataSize();
 
@@ -28,6 +26,8 @@ private:
 	//Frame frames_[FRAMES_COUNT];
 
 	static const int bufferSizeSamples_ = 1000;
+
+	int counter_ = 0;
 
 	int inputIndex_ = 0;
 	int outputIndex_ = 0;

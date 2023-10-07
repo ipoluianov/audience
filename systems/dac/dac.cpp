@@ -53,7 +53,7 @@ void setDMA();
 void Dac::init()
 {
 
-	/*LL_SPI_Enable(SPI1);
+	LL_SPI_Enable(SPI1);
 
 	LL_SPI_EnableDMAReq_TX(SPI1);
 	LL_SPI_EnableDMAReq_RX(SPI1);
@@ -65,7 +65,7 @@ void Dac::init()
 	LL_DMA_SetDataLength(DMA1, LL_DMA_STREAM_1, 3);
 
     LL_DMA_ConfigAddresses(DMA1, LL_DMA_STREAM_0, (uint32_t)&(SPI1->RXDR), (uint32_t)&dac1_dma_buffer_rx, LL_DMA_GetDataTransferDirection(DMA1, LL_DMA_STREAM_0));
-    LL_DMA_ConfigAddresses(DMA1, LL_DMA_STREAM_1, (uint32_t)dac1_dma_buffer_tx, (uint32_t)&(SPI1->TXDR), LL_DMA_GetDataTransferDirection(DMA1, LL_DMA_STREAM_1));*/
+    LL_DMA_ConfigAddresses(DMA1, LL_DMA_STREAM_1, (uint32_t)dac1_dma_buffer_tx, (uint32_t)&(SPI1->TXDR), LL_DMA_GetDataTransferDirection(DMA1, LL_DMA_STREAM_1));
 
 	LL_SPI_Enable(SPI2);
 
@@ -85,16 +85,11 @@ void Dac::init()
 	LL_TIM_EnableCounter(TIM1);
 }
 
-extern SPI_HandleTypeDef hspi1;
+//extern SPI_HandleTypeDef hspi1;
 
 void Dac::process()
 {
-	/*DMA1_Stream0->NDTR = 3;
-	DMA1_Stream1->NDTR = 3;
 
-	DMA1_Stream0->CR |= 0x00000001;
-	DMA1_Stream1->CR |= 0x00000001;
-	LL_SPI_StartMasterTransfer(SPI1);*/
 
 	//SPI1->TXDR = 0x11;
 	//SPI1->CR1 = SPI1->CR1 | 0b00000100;
@@ -107,9 +102,9 @@ void Dac::process()
 	LL_SPI_TransmitData8(SPI2, 0xAA);
 	LL_SPI_StartMasterTransfer(SPI2);*/
 
-	LL_GPIO_ResetOutputPin(CS1_GPIO_Port, CS1_Pin);
-	volatile HAL_StatusTypeDef err = HAL_SPI_Transmit(&hspi1, dac1_dma_buffer_tx, 3, 1000);
-	LL_GPIO_SetOutputPin(CS1_GPIO_Port, CS1_Pin);
+	//LL_GPIO_ResetOutputPin(CS1_GPIO_Port, CS1_Pin);
+	//volatile HAL_StatusTypeDef err = HAL_SPI_Transmit(&hspi1, dac1_dma_buffer_tx, 3, 1000);
+	//LL_GPIO_SetOutputPin(CS1_GPIO_Port, CS1_Pin);
 
 
 	HAL_Delay(1);
@@ -255,19 +250,9 @@ void setDMA()
 
 void Dac::timer1()
 {
-	return;
-
-	if (outputIndex_ == inputIndex_)
-		return; // No data to play
-
-	int currentCodeA = channelA_[outputIndex_];
-	int currentCodeB = channelB_[outputIndex_];
-
-	__disable_irq();
-	outputIndex_++;
-	if (outputIndex_ == bufferSizeSamples_)
-		outputIndex_ = 0;
-	__enable_irq();
+	// Load data to DMA buffer
+	int currentCodeA = counter_;
+	int currentCodeB = counter_;
 
 	dac1_dma_buffer_tx[0] = (currentCodeA >> 12) & 0xFF;
 	dac1_dma_buffer_tx[1] = (currentCodeA >> 4) & 0xFF;
@@ -275,46 +260,29 @@ void Dac::timer1()
 	dac2_dma_buffer_tx[0] = (currentCodeB >> 12) & 0xFF;
 	dac2_dma_buffer_tx[1] = (currentCodeB >> 4) & 0xFF;
 	dac2_dma_buffer_tx[2] = (currentCodeB << 4) & 0xF0;
-	//CS_1_OFF;
-	//CS_2_OFF;
+
 	LL_GPIO_ResetOutputPin(CS1_GPIO_Port, CS1_Pin);
 	LL_GPIO_ResetOutputPin(CS2_GPIO_Port, CS2_Pin);
 	__DSB();
-
-	//LL_GPIO_ResetOutputPin(SPI1_CS_GPIO_Port, SPI1_CS_Pin);
 
 	DMA1_Stream0->NDTR = 3;
 	DMA1_Stream1->NDTR = 3;
 
 	DMA1_Stream0->CR |= 0x00000001;
 	DMA1_Stream1->CR |= 0x00000001;
-	LL_SPI_StartMasterTransfer(SPI1);
-
-	//LL_GPIO_ResetOutputPin(SPI2_CS_GPIO_Port, SPI2_CS_Pin);
 
 	DMA1_Stream2->NDTR = 3;
 	DMA1_Stream3->NDTR = 3;
 
 	DMA1_Stream2->CR |= 0x00000001;
 	DMA1_Stream3->CR |= 0x00000001;
+
+	LL_SPI_StartMasterTransfer(SPI1);
 	LL_SPI_StartMasterTransfer(SPI2);
+
+	counter_++;
+	if (counter_ > 65535)
+		counter_ = 0;
 }
 
-void Dac::dmaIT1()
-{
-	asm("nop");
-	asm("nop");
-	asm("nop");
-
-	LL_GPIO_SetOutputPin(CS1_GPIO_Port, CS1_Pin);
-}
-
-void Dac::dmaIT2()
-{
-	asm("nop");
-	asm("nop");
-	asm("nop");
-
-	LL_GPIO_SetOutputPin(CS2_GPIO_Port, CS2_Pin);
-}
 
