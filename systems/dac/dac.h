@@ -25,7 +25,7 @@ private:
 	//static const int FRAMES_COUNT = 100;
 	//Frame frames_[FRAMES_COUNT];
 
-	static const int bufferSizeSamples_ = 1000;
+	static const int bufferSizeSamples_ = 30000;
 
 	int counter_ = 0;
 
@@ -34,6 +34,12 @@ private:
 
 	int channelA_[bufferSizeSamples_];
 	int channelB_[bufferSizeSamples_];
+
+	int counterMute_ = 0;
+	int counterOverflow_ = 0;
+
+	int lastBufferLevel_ = 0;
+	int bufferLevel();
 
 	//Frame * currentFrame_ = nullptr;
 	//int playingPoint_ = 0;

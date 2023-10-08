@@ -299,10 +299,10 @@ static int8_t AUDIO_PeriodicTC_FS(uint8_t *pbuf, uint32_t size, uint8_t cmd)
 
   short * data = (short *)pbuf;
 
-  LL_GPIO_ResetOutputPin(LED_RED_GPIO_Port, LED_RED_Pin);
-	LL_GPIO_SetOutputPin(LED_RED_GPIO_Port, LED_RED_Pin);
 
-  //system_add_data(pbuf, size);
+
+
+  system_add_data(pbuf, size);
 
   int now = HAL_GetTick();
   ps_count += size;

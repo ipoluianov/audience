@@ -129,11 +129,15 @@ void Dac::addData(char * data, int size)
 			newIndex = 0;
 		}
 		if (newIndex == outputIndex_)
+		{
+			counterOverflow_++;
 			break;
+		}
 		channelA_[inputIndex_] = dataAsShorts[i];
 		channelB_[inputIndex_] = dataAsShorts[i + 1];
 		inputIndex_ = newIndex;
 	}
+	lastBufferLevel_ = bufferLevel();
 	__enable_irq();
 	LL_GPIO_SetOutputPin(LED_GREEN_GPIO_Port, LED_GREEN_Pin);
 }
@@ -253,15 +257,45 @@ void setDMA()
 
 void Dac::timer1()
 {
+	/*static bool muteDetected_ = false;
+	if (muteDetected_ && bufferLevel() < 15000)
+	{
+
+		LL_GPIO_SetOutputPin(LED_RED_GPIO_Port, LED_RED_Pin);
+		return;
+	}
+
+
 	if (outputIndex_ == inputIndex_)
-			return;
+	{
+		counterMute_++;
+		muteDetected_ = true;
+		return;
+	}
 
+	muteDetected_ = false;
 
+	int spacerK = 4; // process every 'spacerK' step
+	// for 192000: 1
+	// for 96000: 2
+	// for 48000: 4
+	// for 24000: 8
+	static int spacer = 0;
+	if (spacer < (spacerK - 1))
+	{
+		spacer++;
+		return;
+	}
+	spacer = 0;*/
+
+	LL_GPIO_ResetOutputPin(LED_RED_GPIO_Port, LED_RED_Pin);
 
 	__disable_irq();
 	// Load data to DMA buffer
-	int currentCodeA = channelA_[outputIndex_] * 10 + 8000000;
-	int currentCodeB = channelB_[outputIndex_] * 10 + 8000000;
+	//int currentCodeA = channelA_[outputIndex_] * 256 + 8388608;
+	//int currentCodeB = channelB_[outputIndex_] * 256 + 8388608;
+	int currentCodeA = 16777216/2;
+	int currentCodeB = 16777216/2;
 
 	outputIndex_++;
 	if (outputIndex_ >= bufferSizeSamples_)
@@ -271,12 +305,15 @@ void Dac::timer1()
 	__enable_irq();
 	//int currentCodeB = 131123;
 
-	dac1_dma_buffer_tx[0] = (currentCodeA >> 12) & 0xFF;
-	dac1_dma_buffer_tx[1] = (currentCodeA >> 4) & 0xFF;
-	dac1_dma_buffer_tx[2] = (currentCodeA << 4) & 0xF0;
-	dac2_dma_buffer_tx[0] = (currentCodeB >> 12) & 0xFF;
-	dac2_dma_buffer_tx[1] = (currentCodeB >> 4) & 0xFF;
-	dac2_dma_buffer_tx[2] = (currentCodeB << 4) & 0xF0;
+	dac1_dma_buffer_tx[0] = (currentCodeA >> 16) & 0xFF;
+	dac1_dma_buffer_tx[1] = (currentCodeA >> 8) & 0xFF;
+	dac1_dma_buffer_tx[2] = (currentCodeA >> 0) & 0xFF;
+	dac2_dma_buffer_tx[0] = (currentCodeB >> 16) & 0xFF;
+	dac2_dma_buffer_tx[1] = (currentCodeB >> 8) & 0xFF;
+	dac2_dma_buffer_tx[2] = (currentCodeB >> 0) & 0xFF;
+
+	// 12 34 56
+	//
 
 	LL_GPIO_ResetOutputPin(CS1_GPIO_Port, CS1_Pin);
 	LL_GPIO_ResetOutputPin(CS2_GPIO_Port, CS2_Pin);
@@ -300,9 +337,22 @@ void Dac::timer1()
 
 
 	counter_++;
-	if (counter_ >= bufferSizeSamples_)
+	if (counter_ >= 16777216)
 		counter_ = 0;
 	//counter_ = 131123;
 }
 
-
+int Dac::bufferLevel()
+{
+	if (inputIndex_ == outputIndex_)
+		return 0;
+	if (inputIndex_ < outputIndex_)
+	{
+		return bufferSizeSamples_ - outputIndex_ + inputIndex_;
+	}
+	if (inputIndex_ > outputIndex_)
+	{
+		return inputIndex_ - outputIndex_;
+	}
+	return inputIndex_ - outputIndex_;
+}
